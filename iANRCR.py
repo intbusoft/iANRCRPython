@@ -18,14 +18,15 @@ class iANRCR(object):
         self.numbersImage = None
         self.memoryNumbers = None
 
-    def convert_detect_image(self,img):
+    def convert_detect_image(self,img,batch = 1):
         '''
          Конвертировать в изображение
         '''
-        frame = cv2.resize(img, (self.config.detect_width, self.config.detect_height))        
+        frame = cv2.resize(img, (self.config.detect_width, self.config.detect_height))
         frame = frame.astype(np.float32)
         frame /= 255.
-        frame = np.expand_dims(frame, 0) 
+        if batch == 1:
+            frame = np.expand_dims(frame, 0) 
         return frame
 
     def process(self,images):
@@ -35,14 +36,13 @@ class iANRCR(object):
         '''         
         if images is None or images[0] is None:
             logging.warning('images == None')
-            return                
+            return                   
 
-        im = None
-        for i in images:
-            if im is None:
-                im = self.convert_detect_image(i)
-            else:
-                im = np.concatenate((im, self.convert_detect_image(i)), axis = 0)
+        im = None	
+        if len(images) == 1:
+            im = self.convert_detect_image(images[0])
+        else:
+            im = np.stack([self.convert_detect_image(i,len(images)) for i in images])              
 
         self.list_objects = self.Detection.process(im)
         
